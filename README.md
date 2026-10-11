@@ -202,6 +202,7 @@ TFRST is modeled on the simplicity of Uniswap's UNI token. I originally wanted t
 ### Future Implementations
 
 - **Burn and Mint Mechanism:** Later I want to try to implement a burn and mint mechanism rewarding holders with another token for burning TFRST token. 
+- **Hardhat Tests:** Very soon I will implement hardhat test for every component in solidity contracts.
 
 ## What I Learned
 
