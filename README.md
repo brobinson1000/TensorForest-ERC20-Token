@@ -2,7 +2,7 @@
   <img src="assets/tsaki-logo.svg" alt="TFRST logo" width="720" />
 </p>
 
-# TFRST (Tsaki) ERC-20 Governance Token
+# TFRST (Tensor Forest) ERC-20 Governance Token
 
 TFRST is an ERC-20 governance token built on Ethereum. I made it as a learning project to understand how cryptocurrencies work, how smart contracts are written and deployed, and how on-chain governance works in the style of tokens like Uniswap's UNI.
 
