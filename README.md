@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="assets/tsaki-logo.svg" alt="TSKI logo" width="720" />
+  <img src="assets/tsaki-logo.svg" alt="TFRST logo" width="720" />
 </p>
 
-# TSKI (Tsaki) ERC-20 Governance Token
+# TFRST (Tsaki) ERC-20 Governance Token
 
-TSKI is an ERC-20 governance token built on Ethereum. I made it as a learning project to understand how cryptocurrencies work, how smart contracts are written and deployed, and how on-chain governance works in the style of tokens like Uniswap's UNI.
+TFRST is an ERC-20 governance token built on Ethereum. I made it as a learning project to understand how cryptocurrencies work, how smart contracts are written and deployed, and how on-chain governance works in the style of tokens like Uniswap's UNI.
 
-Holders of TSKI can delegate voting power, create proposals, vote, and have passed proposals executed through a timelock. No single person controls the token once deployment is finished.
+Holders of TFRST can delegate voting power, create proposals, vote, and have passed proposals executed through a timelock. No single person controls the token once deployment is finished.
 
-> **Disclaimer:** TSKI is an educational project. It has no promised value, is not an investment, and has not been professionally audited. Do not use this code with real funds without a full security review.
+> **Disclaimer:** TFRST is an educational project. It has no promised value, is not an investment, and has not been professionally audited. Do not use this code with real funds without a full security review.
 
 ---
 
@@ -24,10 +24,9 @@ Holders of TSKI can delegate voting power, create proposals, vote, and have pass
 - [Getting Started](#getting-started)
 - [Compile and Test](#compile-and-test)
 - [Deploy](#deploy)
-- [Using TSKI](#using-tski)
+- [Using TFRST](#using-tski)
 - [Design Decisions](#design-decisions)
 - [What I Learned](#what-i-learned)
-- [Security Notes](#security-notes)
 - [License](#license)
 
 ---
@@ -47,8 +46,8 @@ Holders of TSKI can delegate voting power, create proposals, vote, and have pass
 
 | Property         | Value                                                              |
 | ---------------- | ------------------------------------------------------------------ |
-| Name             | Tsaki                                                              |
-| Symbol           | TSKI                                                               |
+| Name             | Tensor Forest                                                      |
+| Symbol           | TFRST                                                               |
 | Decimals         | 18                                                                 |
 | Initial Supply   | `YOUR_INITIAL_SUPPLY`                                              |
 | Network          | Ethereum (`YOUR_NETWORK`)                                          |
@@ -56,8 +55,6 @@ Holders of TSKI can delegate voting power, create proposals, vote, and have pass
 | Governor Address | `0xYOUR_GOVERNOR_ADDRESS`                                          |
 | Timelock Address | `0xYOUR_TIMELOCK_ADDRESS`                                          |
 | Etherscan        | [View token](https://etherscan.io/address/0xYOUR_TOKEN_ADDRESS)    |
-
-> Replace the placeholders with your real values. For a testnet such as Sepolia, use `https://sepolia.etherscan.io/address/...`.
 
 ## How Governance Works
 
@@ -77,7 +74,7 @@ Voting power is read from a snapshot taken when voting opens, so holders must de
 | ------------------- | ---------------------------------------------------------- |
 | Voting delay        | 7,200 blocks (about 1 day)                                 |
 | Voting period       | 7,200 blocks (about 1 day)                                 |
-| Proposal threshold  | 5,000,000 TSKI of voting power (5% of a 100M supply)       |
+| Proposal threshold  | 5,000,000 TFRST of voting power (5% of a 100M supply)       |
 | Quorum              | 5% of total supply (For + Abstain votes)                   |
 | Timelock delay      | 604,800 seconds (7 days)                                   |
 | Mint interval       | At least 365 days between mints                            |
@@ -122,16 +119,14 @@ Voting power is read from a snapshot taken when voting opens, so holders must de
 └── README.md
 ```
 
-> Adjust this tree to match your actual files.
-
 ## Getting Started
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (a version supported by Hardhat 3, 22 LTS or newer recommended)
 - npm
-- A wallet with ETH for gas (testnet ETH for Sepolia)
-- An RPC provider URL (Alchemy, Infura, etc.)
+- A wallet with ETH for gas (I used testnet ETH for Sepolia)
+- An RPC provider URL (I used Alchemy or you can use Infura, etc.)
 - An Etherscan API key (optional, for verification)
 
 ### Installation
@@ -152,8 +147,6 @@ npx hardhat keystore set SEPOLIA_PRIVATE_KEY
 npx hardhat keystore set ETHERSCAN_API_KEY
 ```
 
-If you use a `.env` file instead, never commit it, and make sure it's listed in `.gitignore`.
-
 ## Compile and Test
 
 ```bash
@@ -162,8 +155,6 @@ npx hardhat test
 ```
 
 ## Deploy
-
-Always rehearse on a local network or Sepolia first. The final step of the deployment gives up admin control and cannot be undone.
 
 Recommended order:
 
@@ -183,14 +174,14 @@ Verify contracts on Etherscan:
 npx hardhat verify --network sepolia 0xYOUR_TOKEN_ADDRESS <constructor args>
 ```
 
-## Using TSKI
+## Using TFRST
 
-### Add TSKI to MetaMask
+### Add TFRST to MetaMask
 
-1. Switch MetaMask to the network where TSKI is deployed.
+1. Switch MetaMask to the network where TFRST is deployed.
 2. Click **Import tokens**.
 3. Paste the token address: `0xYOUR_TOKEN_ADDRESS`.
-4. The symbol (`TSKI`) and decimals (`18`) should fill in automatically.
+4. The symbol (`TFRST`) and decimals (`18`) should fill in automatically.
 
 ### Delegate your votes
 
@@ -202,7 +193,7 @@ On the Governor's Etherscan page, open **Write Contract** and call `castVote(pro
 
 ## Design Decisions
 
-TSKI is modeled on the simplicity of Uniswap's UNI token. It deliberately leaves out features that give any single party power over holders:
+TFRST is modeled on the simplicity of Uniswap's UNI token. I originally wanted to design a token modeled after USDT, however with further research I realized USDT limits a true decentralization model. One example of this in USDT is allowing freezing or blacklist of wallet addresses. TFRST deliberately leaves out features that give any single party power over holders:
 
 - **No pause function:** nobody can freeze transfers.
 - **No blacklist or fees:** transfers behave exactly like a standard ERC-20.
@@ -210,7 +201,9 @@ TSKI is modeled on the simplicity of Uniswap's UNI token. It deliberately leaves
 - **No upgradeable proxy:** the code cannot be changed after deployment.
 - **Minting is bounded:** the only admin power is minting, and only the timelock can use it, after a governance vote, a 7-day delay, a 365-day interval, and a 2% size limit.
 
-The trade-off is that bugs cannot be patched after launch, so thorough testing before deployment matters.
+### Future Implementations
+
+- **Burn and Mint Mechanism:** Later I want to try to implement a burn and mint mechanism rewarding holders with another token for burning TFRST token. 
 
 ## What I Learned
 
@@ -223,15 +216,8 @@ The trade-off is that bugs cannot be patched after launch, so thorough testing b
 - How custom errors and events reduce gas and help apps track activity
 - How to write, compile, test, and deploy with Hardhat 3, TypeScript, and viem
 - Why distribution matters: token-weighted voting favors whoever holds the supply
-
-## Security Notes
-
-- This project has **not** been audited.
-- Never commit private keys, seed phrases, or API keys.
-- Always test on a testnet before deploying to mainnet.
-- Deployed contracts are immutable, so double-check every parameter and address.
-- Governance is only as decentralized as the token distribution. A holder with a majority of delegated votes can pass any proposal.
-- Run static analysis (for example Slither) and write tests for every revert path before deploying.
+- Decrentralized crypto versus centralized crypto, and its trade offs
+- Solidity basics and best practices
 
 ## License
 
@@ -239,4 +225,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ---
 
-Built to learn. Feedback and suggestions are welcome.
+Built to learn. Feedback and suggestions are always welcomed!
