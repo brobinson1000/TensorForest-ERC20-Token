@@ -1,91 +1,138 @@
 <p align="center">
-  <img src="assets/tsaki-logo.svg" alt="TSAKI logo" width="720" />
+  <img src="assets/tsaki-logo.svg" alt="TSKI logo" width="720" />
 </p>
 
-# TSAKI (TSAKI) ERC-20 Token
+# TSKI (Tsaki) ERC-20 Governance Token
 
-TSAKI is an ERC-20 token deployed on the Ethereum blockchain. I built it as a learning project to understand how cryptocurrencies work, how smart contracts are written and deployed, and how the ERC-20 standard behaves in practice.
+TSKI is an ERC-20 governance token built on Ethereum. I made it as a learning project to understand how cryptocurrencies work, how smart contracts are written and deployed, and how on-chain governance works in the style of tokens like Uniswap's UNI.
 
-> **Disclaimer:** TSAKI is an educational project. It has no promised value, is not an investment, and has not been professionally audited. Do not use this code in production or with real funds without a full security review.
+Holders of TSKI can delegate voting power, create proposals, vote, and have passed proposals executed through a timelock. No single person controls the token once deployment is finished.
+
+> **Disclaimer:** TSKI is an educational project. It has no promised value, is not an investment, and has not been professionally audited. Do not use this code with real funds without a full security review.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
+- [Features](#features)
 - [Token Details](#token-details)
+- [How Governance Works](#how-governance-works)
+- [Governance Parameters](#governance-parameters)
+- [Contracts](#contracts)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [Compile](#compile)
-- [Test](#test)
+- [Compile and Test](#compile-and-test)
 - [Deploy](#deploy)
-- [Interacting With the Contract](#interacting-with-the-contract)
+- [Using TSKI](#using-tski)
+- [Design Decisions](#design-decisions)
 - [What I Learned](#what-i-learned)
 - [Security Notes](#security-notes)
 - [License](#license)
 
 ---
 
-## Overview
+## Features
 
-This project implements a fungible token that follows the [ERC-20 standard](https://eips.ethereum.org/EIPS/eip-20). The contract is written in Solidity, tested and deployed with TypeScript using Hardhat 3.
-
-The token supports the standard ERC-20 functions:
-
-- `totalSupply()`
-- `balanceOf(address)`
-- `transfer(address, uint256)`
-- `approve(address, uint256)`
-- `allowance(address, address)`
-- `transferFrom(address, address, uint256)`
+- **Standard ERC-20:** `transfer`, `approve`, `transferFrom`, `balanceOf`, `allowance`, `totalSupply`
+- **Voting power (`ERC20Votes`):** holders delegate votes, and balances are checkpointed per block so past votes can't be manipulated
+- **Gasless approvals (`ERC20Permit`, EIP-2612):** approve spending with a signed message instead of a transaction
+- **Rate-limited minting:** only the timelock can mint, at most once every 365 days, and no more than 2% of total supply per mint
+- **On-chain governance (`TsakiGovernor`):** proposals, voting, and quorum, built on OpenZeppelin's Governor
+- **Timelock (`TsakiTimelock`):** every passed proposal waits 7 days before it can run, giving holders time to react
+- **No admin backdoors:** no pause, no blacklist, no burn restriction, no rescue function, and no upgradeable proxy
+- **Ownership by governance:** the timelock owns the token, and the deployer gives up all control after setup
 
 ## Token Details
 
-| Property         | Value                              |
-| ---------------- | ---------------------------------- |
-| Name             | TSAKI                              |
-| Symbol           | TSAKI                              |
-| Decimals         | 18                                 |
-| Total Supply     | `YOUR_TOTAL_SUPPLY`                |
-| Network          | Ethereum (`YOUR_NETWORK`)          |
-| Contract Address | `0xYOUR_CONTRACT_ADDRESS`          |
-| Etherscan        | [View contract](https://etherscan.io/address/0xYOUR_CONTRACT_ADDRESS) |
+| Property         | Value                                                              |
+| ---------------- | ------------------------------------------------------------------ |
+| Name             | Tsaki                                                              |
+| Symbol           | TSKI                                                               |
+| Decimals         | 18                                                                 |
+| Initial Supply   | `YOUR_INITIAL_SUPPLY`                                              |
+| Network          | Ethereum (`YOUR_NETWORK`)                                          |
+| Token Address    | `0xYOUR_TOKEN_ADDRESS`                                             |
+| Governor Address | `0xYOUR_GOVERNOR_ADDRESS`                                          |
+| Timelock Address | `0xYOUR_TIMELOCK_ADDRESS`                                          |
+| Etherscan        | [View token](https://etherscan.io/address/0xYOUR_TOKEN_ADDRESS)    |
 
-> Replace the placeholders above with your real values. If you deployed to a testnet such as Sepolia, use `https://sepolia.etherscan.io/address/...` instead.
+> Replace the placeholders with your real values. For a testnet such as Sepolia, use `https://sepolia.etherscan.io/address/...`.
+
+## How Governance Works
+
+1. **Delegate.** A holder calls `delegate(address)` on the token, usually delegating to themselves. Tokens have no voting power until this is done.
+2. **Propose.** An address with enough delegated voting power calls `propose(...)` on the Governor, describing an action such as minting tokens.
+3. **Vote.** After the voting delay, delegated holders call `castVote(proposalId, support)` with `0` = Against, `1` = For, `2` = Abstain. Votes are weighted by tokens.
+4. **Pass.** The proposal succeeds if quorum is reached and there are more For votes than Against votes.
+5. **Queue.** Anyone queues a successful proposal in the timelock.
+6. **Wait.** The timelock delay must pass (7 days).
+7. **Execute.** Anyone executes the proposal, and the timelock calls the token.
+
+Voting power is read from a snapshot taken when voting opens, so holders must delegate **before** a proposal is created for their tokens to count on it.
+
+## Governance Parameters
+
+| Setting             | Value                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| Voting delay        | 7,200 blocks (about 1 day)                                 |
+| Voting period       | 7,200 blocks (about 1 day)                                 |
+| Proposal threshold  | 5,000,000 TSKI of voting power (5% of a 100M supply)       |
+| Quorum              | 5% of total supply (For + Abstain votes)                   |
+| Timelock delay      | 604,800 seconds (7 days)                                   |
+| Mint interval       | At least 365 days between mints                            |
+| Mint size limit     | At most 2% of total supply per mint                        |
+
+> The proposal threshold is a fixed token amount, so it equals 5% only if the total supply is 100M. Adjust it if your supply differs.
+
+## Contracts
+
+| Contract         | File                          | Purpose                                                      |
+| ---------------- | ----------------------------- | ------------------------------------------------------------ |
+| `Tsaki`          | `contracts/Tsaki.sol`         | The ERC-20 token with voting, permit, and rate-limited mint  |
+| `TsakiGovernor`  | `contracts/TsakiGovernor.sol` | Proposals, voting, and quorum                                |
+| `TsakiTimelock`  | `contracts/TsakiTimelock.sol` | Delays and executes approved actions; owns the token         |
 
 ## Tech Stack
 
-- **Solidity**: smart contract language
-- **TypeScript**: tests, scripts, and deployment modules
-- **Hardhat 3**: development environment for compiling, testing, and deploying
-- **OpenZeppelin Contracts**: audited ERC-20 base implementation (if used)
+- **Solidity** (`^0.8.20`): smart contracts
+- **TypeScript**: deployment scripts and tests
+- **Hardhat 3**: compile, test, and deploy
+- **viem**: contract interaction from TypeScript
+- **OpenZeppelin Contracts v5**: ERC-20, Votes, Permit, Governor, and TimelockController
 - **Node.js**: runtime
 
 ## Project Structure
 
 ```
 .
-├── contracts/          # Solidity smart contracts (TSAKI.sol)
-├── test/               # TypeScript tests
-├── ignition/
-│   └── modules/        # Hardhat Ignition deployment modules
-├── hardhat.config.ts   # Hardhat 3 configuration
+├── assets/
+│   └── tsaki-logo.svg
+├── contracts/
+│   ├── Tsaki.sol
+│   ├── TsakiGovernor.sol
+│   └── TsakiTimelock.sol
+├── scripts/
+│   ├── deployTimelock.ts
+│   └── deployGovernance.ts
+├── test/
+├── hardhat.config.ts
 ├── package.json
+├── tsconfig.json
 └── README.md
 ```
 
-> Adjust this tree to match your actual folders.
+> Adjust this tree to match your actual files.
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (use a version supported by Hardhat 3, 22 LTS or newer recommended)
-- npm or pnpm
-- A wallet with ETH for gas fees (testnet ETH if deploying to a testnet)
+- [Node.js](https://nodejs.org/) (a version supported by Hardhat 3, 22 LTS or newer recommended)
+- npm
+- A wallet with ETH for gas (testnet ETH for Sepolia)
 - An RPC provider URL (Alchemy, Infura, etc.)
-- An Etherscan API key (optional, for contract verification)
+- An Etherscan API key (optional, for verification)
 
 ### Installation
 
@@ -97,7 +144,7 @@ npm install
 
 ### Configuration
 
-Hardhat 3 supports an encrypted keystore, so you don't need to put private keys in a plain `.env` file. Set your secrets like this:
+Hardhat 3 supports an encrypted keystore, so secrets don't need to live in a plain `.env` file:
 
 ```bash
 npx hardhat keystore set SEPOLIA_RPC_URL
@@ -105,70 +152,86 @@ npx hardhat keystore set SEPOLIA_PRIVATE_KEY
 npx hardhat keystore set ETHERSCAN_API_KEY
 ```
 
-If you use a `.env` file instead, **never commit it**. Make sure `.env` is listed in `.gitignore`.
+If you use a `.env` file instead, never commit it, and make sure it's listed in `.gitignore`.
 
-## Compile
+## Compile and Test
 
 ```bash
 npx hardhat build
-```
-
-## Test
-
-```bash
 npx hardhat test
 ```
 
 ## Deploy
 
-Deploy locally to a simulated network:
+Always rehearse on a local network or Sepolia first. The final step of the deployment gives up admin control and cannot be undone.
+
+Recommended order:
+
+1. Deploy the **timelock** (you are temporary proposer and admin).
+2. Deploy the **token** with the timelock as owner.
+3. Deploy the **Governor**, passing the token and timelock addresses.
+4. Grant the Governor the **proposer** and **canceller** roles on the timelock.
+5. Revoke your own timelock roles and renounce admin.
 
 ```bash
-npx hardhat ignition deploy ignition/modules/TSAKI.ts
+npx hardhat run scripts/deployGovernance.ts --network sepolia
 ```
 
-Deploy to a live network (example: Sepolia):
+Verify contracts on Etherscan:
 
 ```bash
-npx hardhat ignition deploy ignition/modules/TSAKI.ts --network sepolia
+npx hardhat verify --network sepolia 0xYOUR_TOKEN_ADDRESS <constructor args>
 ```
 
-Verify the contract on Etherscan:
+## Using TSKI
 
-```bash
-npx hardhat verify --network sepolia 0xYOUR_CONTRACT_ADDRESS
-```
+### Add TSKI to MetaMask
 
-> Add constructor arguments after the address if your contract takes any.
-
-## Interacting With the Contract
-
-### Add TSAKI to MetaMask
-
-1. Open MetaMask and switch to the network where TSAKI is deployed.
+1. Switch MetaMask to the network where TSKI is deployed.
 2. Click **Import tokens**.
-3. Paste the contract address: `0xYOUR_CONTRACT_ADDRESS`.
-4. The symbol (`TSAKI`) and decimals (`18`) should fill in automatically.
+3. Paste the token address: `0xYOUR_TOKEN_ADDRESS`.
+4. The symbol (`TSKI`) and decimals (`18`) should fill in automatically.
 
-### Using Etherscan
+### Delegate your votes
 
-On the contract's Etherscan page, open the **Contract** tab, then use **Read Contract** to check balances and supply, and **Write Contract** (after connecting your wallet) to transfer or approve tokens.
+On the token's Etherscan page, open **Contract**, then **Write Contract**, connect your wallet, and call `delegate` with your own address. Verify with `getVotes(yourAddress)` under **Read Contract**.
+
+### Vote on a proposal
+
+On the Governor's Etherscan page, open **Write Contract** and call `castVote(proposalId, support)` while the proposal is Active (`0` = Against, `1` = For, `2` = Abstain).
+
+## Design Decisions
+
+TSKI is modeled on the simplicity of Uniswap's UNI token. It deliberately leaves out features that give any single party power over holders:
+
+- **No pause function:** nobody can freeze transfers.
+- **No blacklist or fees:** transfers behave exactly like a standard ERC-20.
+- **No rescue function:** tokens sent to a contract by mistake stay there, which keeps the admin surface minimal.
+- **No upgradeable proxy:** the code cannot be changed after deployment.
+- **Minting is bounded:** the only admin power is minting, and only the timelock can use it, after a governance vote, a 7-day delay, a 365-day interval, and a 2% size limit.
+
+The trade-off is that bugs cannot be patched after launch, so thorough testing before deployment matters.
 
 ## What I Learned
 
 - How the ERC-20 standard defines a common interface for fungible tokens
-- How balances, allowances, and transfers are tracked in contract storage
-- How events like `Transfer` and `Approval` let wallets and explorers follow activity
-- How to write, compile, and test Solidity contracts with Hardhat 3 and TypeScript
-- How gas, deployment, and contract verification work on Ethereum
-- Why security practices matter when handling private keys and writing contracts
+- How `ERC20Votes` checkpoints balances so voting power can't be faked
+- How delegation, snapshots, quorum, and thresholds work in a Governor
+- Why a timelock separates deciding from doing, and why that protects holders
+- How role management works in `AccessControl` and why renouncing admin matters
+- How inheritance and `override` resolve conflicts between multiple parent contracts
+- How custom errors and events reduce gas and help apps track activity
+- How to write, compile, test, and deploy with Hardhat 3, TypeScript, and viem
+- Why distribution matters: token-weighted voting favors whoever holds the supply
 
 ## Security Notes
 
-- This contract has **not** been audited.
-- Never commit private keys, seed phrases, or API keys to the repository.
+- This project has **not** been audited.
+- Never commit private keys, seed phrases, or API keys.
 - Always test on a testnet before deploying to mainnet.
-- Deployed smart contracts are generally immutable, so double-check everything before deploying.
+- Deployed contracts are immutable, so double-check every parameter and address.
+- Governance is only as decentralized as the token distribution. A holder with a majority of delegated votes can pass any proposal.
+- Run static analysis (for example Slither) and write tests for every revert path before deploying.
 
 ## License
 
