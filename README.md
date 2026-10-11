@@ -80,15 +80,13 @@ Voting power is read from a snapshot taken when voting opens, so holders must de
 | Mint interval       | At least 365 days between mints                            |
 | Mint size limit     | At most 2% of total supply per mint                        |
 
-> The proposal threshold is a fixed token amount, so it equals 5% only if the total supply is 100M. Adjust it if your supply differs.
-
 ## Contracts
 
 | Contract         | File                          | Purpose                                                      |
 | ---------------- | ----------------------------- | ------------------------------------------------------------ |
-| `Tsaki`          | `contracts/Tsaki.sol`         | The ERC-20 token with voting, permit, and rate-limited mint  |
-| `TsakiGovernor`  | `contracts/TsakiGovernor.sol` | Proposals, voting, and quorum                                |
-| `TsakiTimelock`  | `contracts/TsakiTimelock.sol` | Delays and executes approved actions; owns the token         |
+| `TFRST`          | `contracts/Tsaki.sol`         | The ERC-20 token with voting, permit, and rate-limited mint  |
+| `TFRSTGovernor`  | `contracts/TsakiGovernor.sol` | Proposals, voting, and quorum                                |
+| `TFRSTTimelock`  | `contracts/TsakiTimelock.sol` | Delays and executes approved actions; owns the token         |
 
 ## Tech Stack
 
@@ -104,11 +102,11 @@ Voting power is read from a snapshot taken when voting opens, so holders must de
 ```
 .
 ├── assets/
-│   └── tsaki-logo.svg
+│   └── tfrst-logo.svg
 ├── contracts/
-│   ├── Tsaki.sol
-│   ├── TsakiGovernor.sol
-│   └── TsakiTimelock.sol
+│   ├── TFRST.sol
+│   ├── TFRSTGovernor.sol
+│   └── TFRSTTimelock.sol
 ├── scripts/
 │   ├── deployTimelock.ts
 │   └── deployGovernance.ts
